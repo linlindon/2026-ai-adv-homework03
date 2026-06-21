@@ -36,5 +36,8 @@ coverage/
 *.tmp
 *.swp
 
+# Playwright MCP debug artifacts (snapshots/screenshots/logs)
+.playwright-mcp/
+
 .claude/*.local.json
 public/css/output.css

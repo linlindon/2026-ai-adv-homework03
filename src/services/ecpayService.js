@@ -107,7 +107,7 @@ function buildAioFormParams({ order, items, baseUrl }) {
     ReturnURL: `${baseUrl}/ecpay/notify`,
     OrderResultURL: `${baseUrl}/ecpay/result`,
     ClientBackURL: `${baseUrl}/ecpay/client-back?orderId=${encodeURIComponent(order.id)}`,
-    ChoosePayment: 'Credit',
+    ChoosePayment: 'ALL',
     EncryptType: '1',
   };
 
