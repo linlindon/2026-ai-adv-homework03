@@ -1,0 +1,110 @@
+<div id="app">
+  <div class="max-w-5xl mx-auto px-5 md:px-8 py-12 md:py-16">
+    <div class="bg-white rounded-3xl border-2 border-ink overflow-hidden flex flex-col md:flex-row">
+      <!-- Brand panel -->
+      <div class="md:w-2/5 bg-forest p-8 md:p-11 flex flex-col justify-between gap-10">
+        <div>
+          <p class="font-display font-extrabold text-5xl text-leaf leading-none">BLOOM</p>
+          <p class="mt-5 font-bold text-2xl text-white leading-snug">歡迎回來，<br>讓花繼續裝點你的生活。</p>
+        </div>
+        <ul class="space-y-2.5 text-sm text-[#D8E0D6]">
+          <li>✓&nbsp;&nbsp;會員專屬優惠與生日禮</li>
+          <li>✓&nbsp;&nbsp;訂單追蹤與快速結帳</li>
+          <li>✓&nbsp;&nbsp;收藏喜愛的花束</li>
+        </ul>
+      </div>
+
+      <!-- Form -->
+      <div class="md:w-3/5 p-8 md:p-12">
+        <h1 class="font-black text-ink text-3xl mb-6">{{ activeTab === 'login' ? '會員登入' : '加入會員' }}</h1>
+
+        <!-- Tabs -->
+        <div class="flex p-1 bg-paper-2 rounded-full mb-7">
+          <button
+            @click="activeTab = 'login'; errors = {}"
+            class="flex-1 py-2.5 text-sm font-bold rounded-full transition-colors"
+            :class="activeTab === 'login' ? 'bg-ink text-paper' : 'text-ink-soft'"
+          >登入</button>
+          <button
+            @click="activeTab = 'register'; errors = {}"
+            class="flex-1 py-2.5 text-sm font-bold rounded-full transition-colors"
+            :class="activeTab === 'register' ? 'bg-ink text-paper' : 'text-ink-soft'"
+          >註冊</button>
+        </div>
+
+        <!-- Login Form -->
+        <form v-if="activeTab === 'login'" @submit.prevent="handleLogin" class="space-y-5">
+          <div>
+            <label class="block text-sm font-semibold text-ink mb-1.5">Email</label>
+            <input
+              v-model="loginForm.email"
+              type="email"
+              placeholder="請輸入 Email"
+              class="w-full bg-paper border-2 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-terra"
+              :class="errors.email ? 'border-terra' : 'border-line'"
+            />
+            <p v-if="errors.email" class="text-terra text-xs mt-1">{{ errors.email }}</p>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-ink mb-1.5">密碼</label>
+            <input
+              v-model="loginForm.password"
+              type="password"
+              placeholder="請輸入密碼"
+              class="w-full bg-paper border-2 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-terra"
+              :class="errors.password ? 'border-terra' : 'border-line'"
+            />
+            <p v-if="errors.password" class="text-terra text-xs mt-1">{{ errors.password }}</p>
+          </div>
+          <button
+            type="submit"
+            :disabled="submitting"
+            class="w-full bg-terra text-white font-bold py-3.5 rounded-full hover:bg-terra-deep transition-colors disabled:opacity-50"
+          >{{ submitting ? '登入中...' : '登入' }}</button>
+        </form>
+
+        <!-- Register Form -->
+        <form v-else @submit.prevent="handleRegister" class="space-y-5">
+          <div>
+            <label class="block text-sm font-semibold text-ink mb-1.5">姓名</label>
+            <input
+              v-model="registerForm.name"
+              type="text"
+              placeholder="請輸入姓名"
+              class="w-full bg-paper border-2 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-terra"
+              :class="errors.name ? 'border-terra' : 'border-line'"
+            />
+            <p v-if="errors.name" class="text-terra text-xs mt-1">{{ errors.name }}</p>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-ink mb-1.5">Email</label>
+            <input
+              v-model="registerForm.email"
+              type="email"
+              placeholder="請輸入 Email"
+              class="w-full bg-paper border-2 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-terra"
+              :class="errors.email ? 'border-terra' : 'border-line'"
+            />
+            <p v-if="errors.email" class="text-terra text-xs mt-1">{{ errors.email }}</p>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-ink mb-1.5">密碼</label>
+            <input
+              v-model="registerForm.password"
+              type="password"
+              placeholder="至少 6 個字元"
+              class="w-full bg-paper border-2 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-terra"
+              :class="errors.password ? 'border-terra' : 'border-line'"
+            />
+            <p v-if="errors.password" class="text-terra text-xs mt-1">{{ errors.password }}</p>
+          </div>
+          <button
+            type="submit"
+            :disabled="submitting"
+            class="w-full bg-terra text-white font-bold py-3.5 rounded-full hover:bg-terra-deep transition-colors disabled:opacity-50"
+          >{{ submitting ? '註冊中...' : '註冊' }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

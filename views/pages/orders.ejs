@@ -1,0 +1,45 @@
+<div id="app">
+  <div class="max-w-5xl mx-auto px-5 md:px-8 py-10 md:py-12">
+    <div class="flex items-end gap-4 mb-7">
+      <h1 class="font-black text-ink text-4xl md:text-5xl leading-none">我的訂單</h1>
+      <span v-if="orders.length" class="text-ink-soft font-medium pb-1">共 {{ orders.length }} 筆訂單</span>
+    </div>
+
+    <div v-if="loading" class="flex justify-center py-16">
+      <div class="w-8 h-8 border-4 border-terra border-t-transparent rounded-full animate-spin"></div>
+    </div>
+
+    <div v-else-if="orders.length === 0" class="text-center py-16">
+      <div class="text-5xl mb-3">📦</div>
+      <p class="text-ink font-semibold mb-1">尚無訂單</p>
+      <p class="text-ink-soft text-sm mb-5">快去選購喜歡的花束吧！</p>
+      <a href="/" class="inline-block bg-ink text-paper font-bold px-7 py-3 rounded-full hover:bg-terra transition-colors">去逛逛</a>
+    </div>
+
+    <div v-else class="space-y-4">
+      <a
+        v-for="order in orders"
+        :key="order.id"
+        :href="'/orders/' + order.id"
+        class="block bg-white rounded-2xl border-2 border-ink p-5 md:p-6 hover:-translate-y-0.5 transition-transform"
+      >
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <p class="font-bold text-ink">訂單編號&nbsp;&nbsp;{{ order.order_no }}</p>
+            <p class="text-xs text-ink-soft mt-1">{{ new Date(order.created_at).toLocaleDateString('zh-TW') }} 建立</p>
+          </div>
+          <div class="flex items-center gap-3 md:gap-5">
+            <span class="font-display font-extrabold text-xl md:text-2xl text-ink">NT$ {{ order.total_amount.toLocaleString() }}</span>
+            <span
+              class="text-xs px-3 py-1.5 rounded-full font-bold"
+              :class="statusMap[order.status]?.cls || 'bg-gray-100 text-gray-600'"
+            >
+              {{ statusMap[order.status]?.label || order.status }}
+            </span>
+            <span class="font-display font-bold text-ink text-lg hidden sm:inline">→</span>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>

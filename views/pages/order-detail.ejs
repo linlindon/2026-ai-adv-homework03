@@ -1,0 +1,97 @@
+<div id="app" data-order-id="<%= orderId %>" data-payment-result="<%= paymentResult %>">
+  <div class="max-w-4xl mx-auto px-5 md:px-8 py-10 md:py-12">
+    <a href="/orders" class="text-sm font-semibold text-ink-soft hover:text-terra">←&nbsp;&nbsp;返回訂單列表</a>
+
+    <div v-if="loading" class="flex justify-center py-16">
+      <div class="w-8 h-8 border-4 border-terra border-t-transparent rounded-full animate-spin"></div>
+    </div>
+
+    <template v-else-if="order">
+      <div class="flex items-center justify-between gap-4 mt-4 mb-6">
+        <h1 class="font-black text-ink text-3xl md:text-5xl leading-none">訂單詳情</h1>
+        <span
+          class="text-sm px-4 py-2 rounded-full font-bold"
+          :class="statusMap[order.status]?.cls || 'bg-gray-100 text-gray-600'"
+        >
+          {{ statusMap[order.status]?.label || order.status }}
+        </span>
+      </div>
+
+      <!-- Payment Result Alert -->
+      <div
+        v-if="paymentResult && paymentMessages[paymentResult]"
+        class="rounded-2xl p-4 mb-6 text-sm font-semibold"
+        :class="paymentMessages[paymentResult].cls"
+      >
+        {{ paymentMessages[paymentResult].text }}
+      </div>
+
+      <!-- Info grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+        <div class="bg-white rounded-2xl border-2 border-ink p-6">
+          <h2 class="font-black text-ink mb-4">訂單資訊</h2>
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between"><span class="text-ink-soft">訂單編號</span><span class="font-semibold text-ink">{{ order.order_no }}</span></div>
+            <div class="flex justify-between"><span class="text-ink-soft">建立日期</span><span class="font-semibold text-ink">{{ new Date(order.created_at).toLocaleDateString('zh-TW') }}</span></div>
+          </div>
+        </div>
+        <div class="bg-white rounded-2xl border-2 border-ink p-6">
+          <h2 class="font-black text-ink mb-4">收件資訊</h2>
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between gap-4"><span class="text-ink-soft shrink-0">收件人</span><span class="font-semibold text-ink text-right">{{ order.recipient_name }}</span></div>
+            <div class="flex justify-between gap-4"><span class="text-ink-soft shrink-0">Email</span><span class="font-semibold text-ink text-right break-all">{{ order.recipient_email }}</span></div>
+            <div class="flex justify-between gap-4"><span class="text-ink-soft shrink-0">地址</span><span class="font-semibold text-ink text-right">{{ order.recipient_address }}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Items -->
+      <div class="bg-white rounded-2xl border-2 border-ink p-6 mb-6">
+        <h2 class="font-black text-ink mb-4">商品明細</h2>
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b-2 border-line text-ink-soft">
+              <th class="text-left py-2 font-semibold">商品名稱</th>
+              <th class="text-right py-2 font-semibold">單價</th>
+              <th class="text-right py-2 font-semibold">數量</th>
+              <th class="text-right py-2 font-semibold">小計</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in order.items" :key="item.id" class="border-b border-line">
+              <td class="py-3 font-semibold text-ink">{{ item.product_name }}</td>
+              <td class="py-3 text-right text-ink-soft">NT$ {{ item.product_price.toLocaleString() }}</td>
+              <td class="py-3 text-right text-ink-soft">{{ item.quantity }}</td>
+              <td class="py-3 text-right font-semibold text-ink">NT$ {{ (item.product_price * item.quantity).toLocaleString() }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="flex justify-between items-center pt-5 mt-1">
+          <span class="font-black text-ink text-lg">總計</span>
+          <span class="font-display font-extrabold text-3xl text-terra">NT$ {{ order.total_amount.toLocaleString() }}</span>
+        </div>
+      </div>
+
+      <!-- Payment Actions -->
+      <div v-if="order.status === 'pending'" class="flex flex-wrap gap-4">
+        <button
+          @click="handleEcpayPay"
+          :disabled="paying"
+          class="bg-terra text-white font-bold px-9 py-4 rounded-full hover:bg-terra-deep transition-colors disabled:opacity-50"
+        >{{ paying ? '處理中...' : '前往綠界付款' }}</button>
+        <button
+          @click="handleVerifyPayment"
+          :disabled="verifying"
+          class="bg-white text-ink font-bold border-2 border-ink px-9 py-4 rounded-full hover:bg-paper-2 transition-colors disabled:opacity-50"
+        >{{ verifying ? '查詢中...' : '重新確認付款狀態' }}</button>
+      </div>
+      <div v-else-if="order.status === 'failed'" class="flex flex-wrap gap-4">
+        <button
+          @click="handleVerifyPayment"
+          :disabled="verifying"
+          class="bg-white text-ink font-bold border-2 border-ink px-9 py-4 rounded-full hover:bg-paper-2 transition-colors disabled:opacity-50"
+        >{{ verifying ? '查詢中...' : '重新確認付款狀態' }}</button>
+      </div>
+    </template>
+  </div>
+</div>

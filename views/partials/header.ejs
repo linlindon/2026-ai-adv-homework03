@@ -1,0 +1,33 @@
+<header class="sticky top-0 z-50 bg-paper border-b-[3px] border-ink">
+  <div class="max-w-7xl mx-auto flex items-center justify-between px-5 md:px-8 h-[72px] gap-4">
+    <!-- Brand -->
+    <a href="/" class="flex items-center gap-2.5 shrink-0">
+      <span class="w-10 h-10 rounded-xl bg-ink flex items-center justify-center font-display font-extrabold text-xl text-leaf">B</span>
+      <span class="leading-none">
+        <span class="block text-[22px] font-black text-ink">花漾生活</span>
+        <span class="hidden sm:block text-[10px] font-display font-semibold tracking-[0.2em] text-ink-soft">BLOOM &amp; CO.</span>
+      </span>
+    </a>
+
+    <!-- Nav -->
+    <nav class="flex items-center gap-5 md:gap-9 text-sm font-semibold text-ink">
+      <a href="/" class="hover:text-terra transition-colors">商品列表</a>
+      <a href="/cart" class="hover:text-terra transition-colors relative flex items-center gap-1.5">
+        購物車
+        <span
+          id="cart-badge"
+          class="absolute -top-2.5 -right-4 bg-terra text-white text-xs font-bold rounded-full w-5 h-5 items-center justify-center"
+          style="display: none;"
+        ></span>
+      </a>
+      <a id="orders-link" href="/orders" class="hover:text-terra transition-colors" style="display: none;">
+        我的訂單
+      </a>
+    </nav>
+
+    <!-- Auth -->
+    <div id="auth-nav" class="flex items-center gap-3 text-sm shrink-0">
+      <a href="/login" class="bg-ink text-paper font-bold px-5 py-2 rounded-full hover:bg-forest transition-colors">登入</a>
+    </div>
+  </div>
+</header>

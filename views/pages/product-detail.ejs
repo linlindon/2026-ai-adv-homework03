@@ -1,0 +1,83 @@
+<div id="app" data-product-id="<%= productId %>">
+  <div class="max-w-7xl mx-auto px-5 md:px-8 py-8 md:py-10">
+    <div v-if="loading" class="flex justify-center py-16">
+      <div class="w-8 h-8 border-4 border-terra border-t-transparent rounded-full animate-spin"></div>
+    </div>
+
+    <div v-else-if="notFound" class="text-center py-20">
+      <div class="text-5xl mb-4">🌷</div>
+      <h2 class="text-2xl font-black text-ink mb-2">找不到此商品</h2>
+      <a href="/" class="text-terra font-bold hover:text-terra-deep">回到首頁</a>
+    </div>
+
+    <template v-else-if="product">
+      <!-- Breadcrumb -->
+      <nav class="flex items-center gap-2 text-sm text-ink-soft mb-6">
+        <a href="/" class="hover:text-terra">首頁</a>
+        <span>/</span>
+        <a href="/" class="hover:text-terra">商品列表</a>
+        <span>/</span>
+        <span class="font-bold text-ink truncate">{{ product.name }}</span>
+      </nav>
+
+      <div class="flex flex-col md:flex-row gap-10 md:gap-14 items-start">
+        <!-- Left: Image -->
+        <div class="w-full md:w-1/2">
+          <div class="relative">
+            <div class="absolute inset-0 translate-x-5 translate-y-5 rounded-3xl bg-leaf"></div>
+            <img
+              :src="product.image_url || 'https://images.unsplash.com/photo-1490750967868-88aa4f44baee?w=800'"
+              :alt="product.name"
+              class="relative w-full aspect-square object-cover rounded-3xl border-2 border-ink"
+            />
+          </div>
+        </div>
+
+        <!-- Right: Info -->
+        <div class="w-full md:w-1/2">
+          <span class="inline-block bg-leaf text-ink font-bold text-[13px] px-3.5 py-1.5 rounded-full">當季限定</span>
+          <h1 class="font-black text-ink text-4xl md:text-5xl leading-tight mt-4">{{ product.name }}</h1>
+          <p class="font-display font-extrabold text-4xl text-terra mt-4">NT$ {{ product.price.toLocaleString() }}</p>
+
+          <div class="flex items-center gap-2 mt-5">
+            <span class="w-2.5 h-2.5 rounded-full bg-sage"></span>
+            <span class="text-sage font-semibold text-sm">尚有 {{ product.stock }} 件 · 可享當日配送</span>
+          </div>
+
+          <p class="text-ink-soft leading-relaxed mt-6">{{ product.description }}</p>
+
+          <!-- Quantity Selector -->
+          <div class="flex items-center gap-5 mt-7">
+            <span class="text-sm font-semibold text-ink">數量</span>
+            <div class="flex items-center border-2 border-ink rounded-full overflow-hidden">
+              <button @click="decrease" class="w-12 h-12 flex items-center justify-center hover:bg-paper-2 font-display text-xl transition-colors">−</button>
+              <span class="w-14 h-12 flex items-center justify-center font-bold">{{ quantity }}</span>
+              <button @click="increase" class="w-12 h-12 flex items-center justify-center hover:bg-paper-2 font-display text-xl transition-colors">+</button>
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-3.5 mt-7">
+            <button
+              @click="addToCart"
+              :disabled="adding || product.stock <= 0"
+              class="flex-1 bg-ink text-paper font-bold py-4 rounded-full hover:bg-forest transition-colors disabled:opacity-40"
+            >
+              {{ product.stock <= 0 ? '已售完' : '加入購物車' }}
+            </button>
+            <button class="bg-terra text-white font-bold py-4 px-10 rounded-full hover:bg-terra-deep transition-colors">立即購買</button>
+          </div>
+
+          <!-- Purchase Notes -->
+          <div class="mt-8 bg-paper-2 rounded-2xl p-6">
+            <h3 class="font-bold text-ink mb-3">購買須知</h3>
+            <ul class="text-ink-soft text-sm space-y-2">
+              <li class="flex gap-2"><span class="text-terra">—</span>花材依據季節供應，實際花束可能略有差異</li>
+              <li class="flex gap-2"><span class="text-terra">—</span>台北市區可享當日配送服務</li>
+              <li class="flex gap-2"><span class="text-terra">—</span>消費滿 NT$ 500 享免運優惠</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
+</div>

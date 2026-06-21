@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@theme {
+  /* ===== 新設計系統色票（大膽現代花店）===== */
+  --color-paper: #F4EDE0;       /* 暖奶油紙底 */
+  --color-paper-2: #EBE1CE;     /* 次階紙色 */
+  --color-ink: #191510;         /* 墨黑 */
+  --color-ink-soft: #6E655A;    /* 柔墨 */
+  --color-terra: #D9532B;       /* 番茄紅（主色）*/
+  --color-terra-deep: #B23E1C;
+  --color-terra-tint: #FBEDE7;  /* 番茄紅淡底 */
+  --color-leaf: #6FC56F;        /* 亮葉綠（點綴）*/
+  --color-forest: #1E3A2C;      /* 深森林綠（深色塊）*/
+  --color-forest-2: #2A4A38;
+  --color-line: #DCD0BA;        /* 紙底細框線 */
+  --color-sage: #4F7D5B;        /* 成功 / 庫存綠 */
+
+  /* ===== 向後相容：沿用舊 class 名，重新指向新配色（前台與後台共用）===== */
+  --color-rose-primary: #D9532B;
+  --color-rose-dark: #B23E1C;
+  --color-rose-light: #E8A06A;
+  --color-apricot: #D9532B;
+  --color-cream: #F4EDE0;
+  --color-blush: #FBEDE7;
+  --color-rose-bg: #EBE1CE;
+  --color-text-primary: #191510;
+  --color-text-secondary: #6E655A;
+  --color-text-muted: #9A948E;
+
+  /* ===== 字體 ===== */
+  --font-display: 'Bricolage Grotesque', sans-serif;
+  --font-body: 'Noto Sans TC', sans-serif;
+}
+
+body {
+  font-family: 'Noto Sans TC', sans-serif;
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+}
+
+/* 大標題：Bricolage Grotesque（拉丁/數字）+ Noto Sans TC（中文）*/
+.font-display {
+  font-family: 'Bricolage Grotesque', 'Noto Sans TC', sans-serif;
+}
+
+/* 跑馬燈動畫 */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 22s linear infinite;
+}
