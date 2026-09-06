@@ -1,8 +1,10 @@
 const { app, request, registerUser } = require('./setup');
+const { calculateShipping } = require('../src/utils/shipping');
 
 describe('Orders API', () => {
   let userToken;
   let productId;
+  let productPrice;
   let orderId;
 
   beforeAll(async () => {
@@ -13,12 +15,31 @@ describe('Orders API', () => {
     // Get a product id
     const prodRes = await request(app).get('/api/products');
     productId = prodRes.body.data.products[0].id;
+    productPrice = prodRes.body.data.products[0].price;
 
     // Add product to cart
     await request(app)
       .post('/api/cart')
       .set('Authorization', `Bearer ${userToken}`)
       .send({ productId, quantity: 1 });
+  });
+
+  it('should reject an invalid shipping method without clearing the cart', async () => {
+    const res = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({
+        recipientName: '測試收件人',
+        recipientEmail: 'recipient@example.com',
+        recipientAddress: '台北市測試路 123 號',
+        shippingMethod: 'drone',
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual(expect.objectContaining({
+      data: null,
+      error: 'VALIDATION_ERROR',
+    }));
   });
 
   it('should create an order from cart', async () => {
@@ -29,6 +50,9 @@ describe('Orders API', () => {
         recipientName: '測試收件人',
         recipientEmail: 'recipient@example.com',
         recipientAddress: '台北市測試路 123 號',
+        shippingMethod: 'home_delivery',
+        isRemoteArea: true,
+        isSameDayDelivery: true,
       });
 
     expect(res.status).toBe(201);
@@ -37,7 +61,17 @@ describe('Orders API', () => {
     expect(res.body).toHaveProperty('message');
     expect(res.body.data).toHaveProperty('id');
     expect(res.body.data).toHaveProperty('order_no');
-    expect(res.body.data).toHaveProperty('total_amount');
+    const expected = calculateShipping({
+      subtotal: productPrice,
+      isRemoteArea: true,
+      isSameDayDelivery: true,
+    });
+    expect(res.body.data).toHaveProperty('subtotal', productPrice);
+    expect(res.body.data).toHaveProperty('shipping_fee', expected.shippingFee);
+    expect(res.body.data).toHaveProperty('shipping_method', 'home_delivery');
+    expect(res.body.data).toHaveProperty('is_remote_area', true);
+    expect(res.body.data).toHaveProperty('is_same_day_delivery', true);
+    expect(res.body.data).toHaveProperty('total_amount', expected.totalAmount);
     expect(res.body.data).toHaveProperty('status', 'pending');
     expect(res.body.data).toHaveProperty('items');
     expect(Array.isArray(res.body.data.items)).toBe(true);
@@ -98,6 +132,7 @@ describe('Orders API', () => {
     expect(res.body).toHaveProperty('error', null);
     expect(res.body.data).toHaveProperty('id', orderId);
     expect(res.body.data).toHaveProperty('order_no');
+    expect(res.body.data).toHaveProperty('shipping_fee');
     expect(res.body.data).toHaveProperty('items');
     expect(Array.isArray(res.body.data.items)).toBe(true);
   });

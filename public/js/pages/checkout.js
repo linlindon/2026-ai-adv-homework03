@@ -7,13 +7,33 @@ createApp({
     const loading = ref(true);
     const submitting = ref(false);
     const cartItems = ref([]);
-    const form = ref({ recipientName: '', recipientEmail: '', recipientAddress: '' });
+    const form = ref({
+      recipientName: '',
+      recipientEmail: '',
+      recipientAddress: '',
+      shippingMethod: 'home_delivery',
+      isRemoteArea: false,
+      isSameDayDelivery: false,
+    });
     const errors = ref({});
 
     const cartTotal = computed(function () {
       return cartItems.value.reduce(function (sum, item) {
         return sum + item.product.price * item.quantity;
       }, 0);
+    });
+
+    const shippingFee = computed(function () {
+      var deliveryFee = form.value.shippingMethod === 'convenience_store'
+        ? 60
+        : (cartTotal.value >= 1500 ? 0 : 120);
+      var remoteAreaFee = form.value.isRemoteArea ? 200 : 0;
+      var sameDayDeliveryFee = form.value.isSameDayDelivery ? 250 : 0;
+      return deliveryFee + remoteAreaFee + sameDayDeliveryFee;
+    });
+
+    const orderTotal = computed(function () {
+      return cartTotal.value + shippingFee.value;
     });
 
     function validate() {
@@ -60,6 +80,16 @@ createApp({
       loading.value = false;
     });
 
-    return { loading, submitting, cartItems, form, errors, cartTotal, submitOrder };
+    return {
+      loading,
+      submitting,
+      cartItems,
+      form,
+      errors,
+      cartTotal,
+      shippingFee,
+      orderTotal,
+      submitOrder,
+    };
   }
 }).mount('#app');

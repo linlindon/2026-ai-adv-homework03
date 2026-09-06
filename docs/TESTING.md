@@ -5,7 +5,7 @@
 - **測試框架**：Vitest 2.x
 - **HTTP 測試工具**：Supertest（直接呼叫 Express app，不需啟動 server）
 - **資料庫**：共用 `database.sqlite`（非 in-memory，測試使用真實 SQLite）
-- **測試類型**：整合測試（Integration Tests）— 直接操作 API 端點，包含 DB 讀寫
+- **測試類型**：Shipping 純函式使用 Unit Tests；API 使用 Integration Tests（直接操作端點與 DB）
 
 > **注意**：本專案不使用 mock DB。測試直接操作真實 SQLite 資料庫，確保 SQL 邏輯正確性。
 
@@ -15,6 +15,7 @@
 
 | 測試檔案 | 測試路由 | 說明 |
 |----------|----------|------|
+| `tests/shipping.test.js` | `src/utils/shipping.js` | 配送費用純函式的門檻與附加費組合 |
 | `tests/auth.test.js` | `/api/auth` | 註冊、登入、profile 存取 |
 | `tests/products.test.js` | `/api/products` | 公開商品列表與詳情 |
 | `tests/cart.test.js` | `/api/cart` | 訪客模式、登入模式、庫存檢查 |
@@ -29,17 +30,18 @@
 `vitest.config.js` 強制設定 `fileParallelism: false`，並指定固定順序：
 
 ```
-auth → products → cart → orders → adminProducts → adminOrders
+shipping → auth → products → cart → orders → adminProducts → adminOrders
 ```
 
 **為何順序固定**：
 
-1. **auth**：不依賴其他模組，但 seed admin 帳號在 DB 初始化時建立
-2. **products**：需要 seed 商品存在（由 `src/database.js` 初始化時 seed）
-3. **cart**：`beforeAll` 呼叫 `GET /api/products` 取得商品 ID，需要商品 seed 資料
-4. **orders**：測試需要先將商品加入購物車，依賴 cart 邏輯與商品資料
-5. **adminProducts**：在 orders 測試執行後，商品庫存已被扣除，測試會自行建立新商品
-6. **adminOrders**：需要已存在的訂單資料（由 orders 測試建立）
+1. **shipping**：純函式、無 DB 狀態依賴，先驗證訂單使用的費用規則
+2. **auth**：不依賴其他模組，但 seed admin 帳號在 DB 初始化時建立
+3. **products**：需要 seed 商品存在（由 `src/database.js` 初始化時 seed）
+4. **cart**：`beforeAll` 呼叫 `GET /api/products` 取得商品 ID，需要商品 seed 資料
+5. **orders**：測試需要先將商品加入購物車，依賴 cart 邏輯與商品資料
+6. **adminProducts**：在 orders 測試執行後，商品庫存已被扣除，測試會自行建立新商品
+7. **adminOrders**：需要已存在的訂單資料（由 orders 測試建立）
 
 ---
 
@@ -126,6 +128,7 @@ describe('新功能 API', () => {
 ```javascript
 sequence: {
   files: [
+    'tests/shipping.test.js',
     'tests/auth.test.js',
     'tests/products.test.js',
     'tests/cart.test.js',

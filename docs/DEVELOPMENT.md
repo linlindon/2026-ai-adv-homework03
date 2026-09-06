@@ -28,6 +28,7 @@
 |------|------|------|
 | Route 檔案 | camelCase + `Routes.js` | `authRoutes.js`, `adminProductRoutes.js` |
 | Middleware 檔案 | camelCase + `Middleware.js` | `authMiddleware.js`, `sessionMiddleware.js` |
+| Utility 模組 | camelCase | `shipping.js` |
 | 測試檔案 | camelCase + `.test.js` | `cart.test.js`, `adminOrders.test.js` |
 | 前端頁面 JS | kebab-case | `product-detail.js`, `admin-products.js` |
 | EJS 頁面模板 | kebab-case + `.ejs` | `product-detail.ejs`, `order-detail.ejs` |
@@ -43,6 +44,8 @@
 
 回傳資料為 `snake_case`（與 DB 欄位一致）：`product_id`、`order_no`、`created_at`。
 
+配送條件的 request 欄位使用 camelCase（`shippingMethod`、`isRemoteArea`、`isSameDayDelivery`），訂單快照 response 使用 snake_case（`shipping_method`、`shipping_fee`、`is_remote_area`、`is_same_day_delivery`）。
+
 ---
 
 ## 模組系統
@@ -52,6 +55,10 @@
 唯一例外：`vitest.config.js` 使用 ESM（`import`）語法，因 Vitest 要求。
 
 不要在 `src/`、`tests/`、`app.js` 中混用 ESM `import`。
+
+### 可測試的業務邏輯
+
+不依賴 Express 或 SQLite 的計算規則放在 `src/utils/`，以純函式輸入／輸出。Shipping 規則集中於 `src/utils/shipping.js`；路由應傳入伺服器端計算的商品小計，禁止直接採信前端傳入的運費或總額。
 
 ---
 

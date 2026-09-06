@@ -50,6 +50,11 @@ function initializeDatabase() {
       recipient_name TEXT NOT NULL,
       recipient_email TEXT NOT NULL,
       recipient_address TEXT NOT NULL,
+      subtotal INTEGER NOT NULL DEFAULT 0,
+      shipping_fee INTEGER NOT NULL DEFAULT 0,
+      shipping_method TEXT NOT NULL DEFAULT 'home_delivery' CHECK(shipping_method IN ('home_delivery', 'convenience_store')),
+      is_remote_area INTEGER NOT NULL DEFAULT 0 CHECK(is_remote_area IN (0, 1)),
+      is_same_day_delivery INTEGER NOT NULL DEFAULT 0 CHECK(is_same_day_delivery IN (0, 1)),
       total_amount INTEGER NOT NULL,
       status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'paid', 'failed')),
       merchant_trade_no TEXT UNIQUE,
@@ -72,11 +77,36 @@ function initializeDatabase() {
     );
   `);
 
+  migrateOrdersShippingColumns();
   migrateOrdersEcpayColumns();
 
   // Seed data
   seedAdminUser();
   seedProducts();
+}
+
+function migrateOrdersShippingColumns() {
+  const existing = db.prepare("PRAGMA table_info(orders)").all().map(c => c.name);
+  const addColumn = (name, ddl) => {
+    if (!existing.includes(name)) {
+      db.exec(`ALTER TABLE orders ADD COLUMN ${name} ${ddl}`);
+    }
+  };
+
+  addColumn('subtotal', 'INTEGER NOT NULL DEFAULT 0');
+  addColumn('shipping_fee', 'INTEGER NOT NULL DEFAULT 0');
+  addColumn(
+    'shipping_method',
+    "TEXT NOT NULL DEFAULT 'home_delivery' CHECK(shipping_method IN ('home_delivery', 'convenience_store'))"
+  );
+  addColumn('is_remote_area', 'INTEGER NOT NULL DEFAULT 0 CHECK(is_remote_area IN (0, 1))');
+  addColumn(
+    'is_same_day_delivery',
+    'INTEGER NOT NULL DEFAULT 0 CHECK(is_same_day_delivery IN (0, 1))'
+  );
+
+  // Orders created before Shipping existed stored only the merchandise total.
+  db.exec('UPDATE orders SET subtotal = total_amount WHERE subtotal = 0 AND total_amount > 0');
 }
 
 function migrateOrdersEcpayColumns() {

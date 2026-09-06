@@ -17,6 +17,11 @@ createApp({
       failed: { label: '付款失敗', cls: 'bg-red-100 text-red-800' },
     };
 
+    const shippingMethodMap = {
+      home_delivery: '宅配',
+      convenience_store: '超商取貨',
+    };
+
     async function loadOrders(page) {
       page = page || 1;
       loading.value = true;
@@ -58,7 +63,7 @@ createApp({
     return {
       orders, pagination, loading, statusFilter,
       detailVisible, detailOrder, detailLoading,
-      statusMap, loadOrders, viewDetail
+      statusMap, shippingMethodMap, loadOrders, viewDetail
     };
   }
 }).mount('#app');

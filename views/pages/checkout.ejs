@@ -56,6 +56,36 @@
             </div>
           </div>
 
+          <h2 class="font-black text-ink text-lg mt-8 mb-4">配送方式</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <label
+              class="flex items-center gap-2.5 px-4 py-4 rounded-xl border-2 cursor-pointer transition-colors"
+              :class="form.shippingMethod === 'home_delivery' ? 'border-terra bg-terra-tint' : 'border-line bg-white'"
+            >
+              <input v-model="form.shippingMethod" type="radio" value="home_delivery" class="accent-[#C95D3A]" />
+              <span class="font-semibold text-ink text-sm">宅配（基本運費 NT$ 120）</span>
+            </label>
+            <label
+              class="flex items-center gap-2.5 px-4 py-4 rounded-xl border-2 cursor-pointer transition-colors"
+              :class="form.shippingMethod === 'convenience_store' ? 'border-terra bg-terra-tint' : 'border-line bg-white'"
+            >
+              <input v-model="form.shippingMethod" type="radio" value="convenience_store" class="accent-[#C95D3A]" />
+              <span class="font-semibold text-ink text-sm">超商取貨（NT$ 60）</span>
+            </label>
+          </div>
+          <p class="text-xs text-ink-soft mt-2">商品小計滿 NT$ 1,500 免宅配基本運費；超商取貨費與附加費不適用。</p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-4">
+            <label class="flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-line bg-white cursor-pointer">
+              <input v-model="form.isRemoteArea" type="checkbox" class="accent-[#C95D3A]" />
+              <span class="font-semibold text-ink text-sm">偏遠地區（加 NT$ 200）</span>
+            </label>
+            <label class="flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-line bg-white cursor-pointer">
+              <input v-model="form.isSameDayDelivery" type="checkbox" class="accent-[#C95D3A]" />
+              <span class="font-semibold text-ink text-sm">當日急件（加 NT$ 250）</span>
+            </label>
+          </div>
+
           <h2 class="font-black text-ink text-lg mt-8 mb-4">付款方式</h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div class="flex items-center gap-2.5 px-4 py-4 rounded-xl border-2 border-terra bg-terra-tint">
@@ -87,13 +117,13 @@
             </div>
             <div class="flex justify-between">
               <span class="text-[#B8AFA2]">運費</span>
-              <span>{{ cartTotal >= 500 ? '免運' : 'NT$ 150' }}</span>
+              <span>{{ shippingFee === 0 ? '免基本運費' : 'NT$ ' + shippingFee.toLocaleString() }}</span>
             </div>
           </div>
           <div class="border-t border-forest-2 pt-3 mt-3 flex justify-between items-center">
             <span class="font-bold">總計</span>
             <span class="font-display font-extrabold text-3xl text-leaf">
-              NT$ {{ (cartTotal + (cartTotal >= 500 ? 0 : 150)).toLocaleString() }}
+              NT$ {{ orderTotal.toLocaleString() }}
             </span>
           </div>
           <button

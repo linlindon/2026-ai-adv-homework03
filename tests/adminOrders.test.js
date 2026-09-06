@@ -24,6 +24,7 @@ describe('Admin Orders API', () => {
         recipientName: '管理員測試收件人',
         recipientEmail: 'admin-test@example.com',
         recipientAddress: '台北市管理員測試路 456 號',
+        shippingMethod: 'convenience_store',
       });
 
     orderId = orderRes.body.data.id;
@@ -66,6 +67,8 @@ describe('Admin Orders API', () => {
     expect(res.body).toHaveProperty('error', null);
     expect(res.body.data).toHaveProperty('id', orderId);
     expect(res.body.data).toHaveProperty('order_no');
+    expect(res.body.data).toHaveProperty('shipping_fee', 60);
+    expect(res.body.data).toHaveProperty('shipping_method', 'convenience_store');
     expect(res.body.data).toHaveProperty('items');
     expect(res.body.data).toHaveProperty('user');
     expect(Array.isArray(res.body.data.items)).toBe(true);

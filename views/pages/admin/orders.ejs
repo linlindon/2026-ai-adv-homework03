@@ -114,6 +114,11 @@
             <p class="text-text-primary">{{ detailOrder.recipient_name }}</p>
             <p class="text-text-secondary">{{ detailOrder.recipient_email }}</p>
             <p class="text-text-secondary">{{ detailOrder.recipient_address }}</p>
+            <p class="text-text-secondary mt-2">
+              配送：{{ shippingMethodMap[detailOrder.shipping_method] || detailOrder.shipping_method }}
+              <span v-if="detailOrder.is_remote_area"> · 偏遠地區</span>
+              <span v-if="detailOrder.is_same_day_delivery"> · 當日急件</span>
+            </p>
           </div>
 
           <div class="border-t border-gray-100 pt-4">
@@ -136,8 +141,10 @@
                 </tr>
               </tbody>
             </table>
-            <div class="flex justify-end mt-3 pt-2 border-t border-gray-100">
-              <span class="font-bold text-rose-primary text-lg">總計 NT$ {{ detailOrder.total_amount.toLocaleString() }}</span>
+            <div class="space-y-1 mt-3 pt-2 border-t border-gray-100 text-right">
+              <p class="text-text-secondary">商品小計 NT$ {{ detailOrder.subtotal.toLocaleString() }}</p>
+              <p class="text-text-secondary">運費 NT$ {{ detailOrder.shipping_fee.toLocaleString() }}</p>
+              <p class="font-bold text-rose-primary text-lg">總計 NT$ {{ detailOrder.total_amount.toLocaleString() }}</p>
             </div>
           </div>
         </div>

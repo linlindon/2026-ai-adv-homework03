@@ -25,7 +25,7 @@
 ├── server.js                    # 進入點：啟動 HTTP server，檢查 JWT_SECRET
 ├── app.js                       # Express 應用設定：middleware、路由掛載
 ├── src/
-│   ├── database.js              # DB 連線、建表、seed 資料（admin 帳號 + 8 種花卉商品）、orders 表 ECPay 欄位 migration
+│   ├── database.js              # DB 連線、建表、seed 資料、orders 表欄位 migration
 │   ├── middleware/
 │   │   ├── authMiddleware.js    # JWT 驗證，成功後將 { userId, email, role } 掛到 req.user
 │   │   ├── adminMiddleware.js   # 角色檢查，req.user.role 必須為 'admin'
@@ -33,6 +33,8 @@
 │   │   └── errorHandler.js     # 全域錯誤處理，過濾 500 錯誤細節,統一回應格式
 │   ├── services/
 │   │   └── ecpayService.js      # 綠界 AIO 金流服務模組（CheckMacValue、AIO 表單參數、QueryTradeInfo 主動查詢）
+│   ├── utils/
+│   │   └── shipping.js          # 配送規則常數與運費／訂單總額純函式
 │   └── routes/
 │       ├── authRoutes.js        # /api/auth：register、login、profile
 │       ├── productRoutes.js     # /api/products：公開商品列表與詳情
@@ -88,6 +90,7 @@
 │           └── admin-orders.js  # 後台：訂單篩選與查看
 ├── tests/
 │   ├── setup.js                 # 測試共用工具（getAdminToken、registerUser）
+│   ├── shipping.test.js         # Shipping 純函式 unit tests
 │   ├── auth.test.js
 │   ├── products.test.js
 │   ├── cart.test.js
@@ -262,7 +265,12 @@ SQL 查詢依此動態拼接 `WHERE` 條件，確保用戶只能操作自己的�
 | recipient_name | TEXT | NOT NULL | 收件人姓名 |
 | recipient_email | TEXT | NOT NULL | 收件人 Email |
 | recipient_address | TEXT | NOT NULL | 收件地址 |
-| total_amount | INTEGER | NOT NULL | 訂單總金額（下單當下快照） |
+| subtotal | INTEGER | NOT NULL, DEFAULT 0 | 商品小計快照 |
+| shipping_fee | INTEGER | NOT NULL, DEFAULT 0 | 總運費快照（配送費與所有附加費） |
+| shipping_method | TEXT | NOT NULL, DEFAULT 'home_delivery', CHECK | `home_delivery` 或 `convenience_store` |
+| is_remote_area | INTEGER | NOT NULL, DEFAULT 0, CHECK IN (0,1) | 是否加收偏遠地區費（SQLite boolean） |
+| is_same_day_delivery | INTEGER | NOT NULL, DEFAULT 0, CHECK IN (0,1) | 是否加收當日急件費（SQLite boolean） |
+| total_amount | INTEGER | NOT NULL | 訂單總額快照（`subtotal + shipping_fee`） |
 | status | TEXT | NOT NULL, DEFAULT 'pending', CHECK IN ('pending','paid','failed') | 訂單狀態 |
 | merchant_trade_no | TEXT | UNIQUE（partial index，NULL 除外） | 送給綠界的交易編號（≤ 20 字元，格式：`EC` + 10 位 Unix 秒 + 6 位 hex） |
 | ecpay_trade_no | TEXT | — | 綠界回傳的交易編號（`TradeNo`），付款成功後寫入 |
@@ -272,7 +280,22 @@ SQL 查詢依此動態拼接 `WHERE` 條件，確保用戶只能操作自己的�
 
 訂單狀態流：`pending` → `paid`（付款成功）或 `pending` → `failed`（付款失敗）。一旦離開 pending 狀態即不可再變更。
 
-> **ECPay 欄位 migration**：為相容既有資料庫，`src/database.js` 於啟動時以 `PRAGMA table_info(orders)` 檢查欄位存在，透過 `ALTER TABLE ... ADD COLUMN` 逐一補齊；`merchant_trade_no` 採 partial unique index（`CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_merchant_trade_no ... WHERE merchant_trade_no IS NOT NULL`），避免多筆 NULL 相互衝突。
+> **Orders 欄位 migration**：為相容既有資料庫，`src/database.js` 於啟動時以 `PRAGMA table_info(orders)` 檢查並補齊 Shipping 與 ECPay 欄位。舊訂單的 `subtotal` 以原 `total_amount` 回填、`shipping_fee` 為 0；`merchant_trade_no` 採 partial unique index，避免多筆 NULL 相互衝突。
+
+### Shipping 計算資料流
+
+```text
+購物車商品價格 × 數量 → subtotal
+                         ↓
+src/utils/shipping.js::calculateShipping
+  配送方式 + 滿額門檻 + 偏遠地區 + 當日急件
+                         ↓
+shipping_fee + total_amount
+                         ↓
+orders transaction 保存快照 → ECPay TotalAmount
+```
+
+`calculateShipping` 不存取 HTTP 或資料庫，因此可直接 unit test。API 僅信任伺服器端從購物車重新計算的 `subtotal`，不接受用戶端傳入的金額。
 
 ### order_items
 

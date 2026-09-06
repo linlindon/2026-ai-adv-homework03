@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const db = require('../database');
 const authMiddleware = require('../middleware/authMiddleware');
 const ecpayService = require('../services/ecpayService');
+const { SHIPPING_METHODS, calculateShipping } = require('../utils/shipping');
 
 const router = express.Router();
 
@@ -13,6 +14,14 @@ function generateOrderNo() {
   const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
   const random = uuidv4().slice(0, 5).toUpperCase();
   return `ORD-${dateStr}-${random}`;
+}
+
+function serializeOrder(order) {
+  return {
+    ...order,
+    is_remote_area: Boolean(order.is_remote_area),
+    is_same_day_delivery: Boolean(order.is_same_day_delivery),
+  };
 }
 
 /**
@@ -38,6 +47,16 @@ function generateOrderNo() {
  *                 format: email
  *               recipientAddress:
  *                 type: string
+ *               shippingMethod:
+ *                 type: string
+ *                 enum: [home_delivery, convenience_store]
+ *                 default: home_delivery
+ *               isRemoteArea:
+ *                 type: boolean
+ *                 default: false
+ *               isSameDayDelivery:
+ *                 type: boolean
+ *                 default: false
  *     responses:
  *       201:
  *         description: 訂單建立成功
@@ -53,6 +72,17 @@ function generateOrderNo() {
  *                       type: string
  *                     order_no:
  *                       type: string
+ *                     subtotal:
+ *                       type: integer
+ *                     shipping_fee:
+ *                       type: integer
+ *                     shipping_method:
+ *                       type: string
+ *                       enum: [home_delivery, convenience_store]
+ *                     is_remote_area:
+ *                       type: boolean
+ *                     is_same_day_delivery:
+ *                       type: boolean
  *                     total_amount:
  *                       type: integer
  *                     status:
@@ -79,7 +109,14 @@ function generateOrderNo() {
  *         description: 購物車為空或庫存不足或收件資訊缺失
  */
 router.post('/', (req, res) => {
-  const { recipientName, recipientEmail, recipientAddress } = req.body;
+  const {
+    recipientName,
+    recipientEmail,
+    recipientAddress,
+    shippingMethod = SHIPPING_METHODS.HOME_DELIVERY,
+    isRemoteArea = false,
+    isSameDayDelivery = false,
+  } = req.body;
   const userId = req.user.userId;
 
   if (!recipientName || !recipientEmail || !recipientAddress) {
@@ -96,6 +133,21 @@ router.post('/', (req, res) => {
       data: null,
       error: 'VALIDATION_ERROR',
       message: 'Email 格式不正確'
+    });
+  }
+
+  try {
+    calculateShipping({
+      subtotal: 0,
+      shippingMethod,
+      isRemoteArea,
+      isSameDayDelivery,
+    });
+  } catch (err) {
+    return res.status(400).json({
+      data: null,
+      error: 'VALIDATION_ERROR',
+      message: err.message,
     });
   }
 
@@ -127,10 +179,15 @@ router.post('/', (req, res) => {
     });
   }
 
-  // Calculate total
-  const totalAmount = cartItems.reduce(
+  const subtotal = cartItems.reduce(
     (sum, item) => sum + item.product_price * item.quantity, 0
   );
+  const shipping = calculateShipping({
+    subtotal,
+    shippingMethod,
+    isRemoteArea,
+    isSameDayDelivery,
+  });
 
   const orderId = uuidv4();
   const orderNo = generateOrderNo();
@@ -139,9 +196,26 @@ router.post('/', (req, res) => {
   // Transaction: create order, order items, deduct stock, clear cart
   const createOrder = db.transaction(() => {
     db.prepare(
-      `INSERT INTO orders (id, order_no, user_id, recipient_name, recipient_email, recipient_address, total_amount, merchant_trade_no)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(orderId, orderNo, userId, recipientName, recipientEmail, recipientAddress, totalAmount, merchantTradeNo);
+      `INSERT INTO orders (
+         id, order_no, user_id, recipient_name, recipient_email, recipient_address,
+         subtotal, shipping_fee, shipping_method, is_remote_area, is_same_day_delivery,
+         total_amount, merchant_trade_no
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      orderId,
+      orderNo,
+      userId,
+      recipientName,
+      recipientEmail,
+      recipientAddress,
+      shipping.subtotal,
+      shipping.shippingFee,
+      shipping.shippingMethod,
+      isRemoteArea ? 1 : 0,
+      isSameDayDelivery ? 1 : 0,
+      shipping.totalAmount,
+      merchantTradeNo
+    );
 
     const insertItem = db.prepare(
       `INSERT INTO order_items (id, order_id, product_id, product_name, product_price, quantity)
@@ -169,6 +243,11 @@ router.post('/', (req, res) => {
     data: {
       id: order.id,
       order_no: order.order_no,
+      subtotal: order.subtotal,
+      shipping_fee: order.shipping_fee,
+      shipping_method: order.shipping_method,
+      is_remote_area: Boolean(order.is_remote_area),
+      is_same_day_delivery: Boolean(order.is_same_day_delivery),
       total_amount: order.total_amount,
       status: order.status,
       merchant_trade_no: order.merchant_trade_no,
@@ -208,6 +287,17 @@ router.post('/', (req, res) => {
  *                             type: string
  *                           order_no:
  *                             type: string
+ *                           subtotal:
+ *                             type: integer
+ *                           shipping_fee:
+ *                             type: integer
+ *                           shipping_method:
+ *                             type: string
+ *                             enum: [home_delivery, convenience_store]
+ *                           is_remote_area:
+ *                             type: boolean
+ *                           is_same_day_delivery:
+ *                             type: boolean
  *                           total_amount:
  *                             type: integer
  *                           status:
@@ -222,8 +312,10 @@ router.post('/', (req, res) => {
  */
 router.get('/', (req, res) => {
   const orders = db.prepare(
-    'SELECT id, order_no, total_amount, status, created_at FROM orders WHERE user_id = ? ORDER BY created_at DESC'
-  ).all(req.user.userId);
+    `SELECT id, order_no, subtotal, shipping_fee, shipping_method,
+            is_remote_area, is_same_day_delivery, total_amount, status, created_at
+     FROM orders WHERE user_id = ? ORDER BY created_at DESC`
+  ).all(req.user.userId).map(serializeOrder);
 
   res.json({
     data: { orders },
@@ -267,6 +359,17 @@ router.get('/', (req, res) => {
  *                       type: string
  *                     recipient_address:
  *                       type: string
+ *                     subtotal:
+ *                       type: integer
+ *                     shipping_fee:
+ *                       type: integer
+ *                     shipping_method:
+ *                       type: string
+ *                       enum: [home_delivery, convenience_store]
+ *                     is_remote_area:
+ *                       type: boolean
+ *                     is_same_day_delivery:
+ *                       type: boolean
  *                     total_amount:
  *                       type: integer
  *                     status:
@@ -306,7 +409,7 @@ router.get('/:id', (req, res) => {
   const items = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(order.id);
 
   res.json({
-    data: { ...order, items },
+    data: { ...serializeOrder(order), items },
     error: null,
     message: '成功'
   });
@@ -412,7 +515,7 @@ router.patch('/:id/pay', (req, res) => {
   const items = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(order.id);
 
   res.json({
-    data: { ...updated, items },
+    data: { ...serializeOrder(updated), items },
     error: null,
     message: action === 'success' ? '付款成功' : '付款失敗'
   });
@@ -524,7 +627,7 @@ router.post('/:id/verify-payment', async (req, res) => {
 
     res.json({
       data: {
-        ...updated,
+        ...serializeOrder(updated),
         items,
         ecpay: { TradeStatus: tradeStatus, TradeNo: result.TradeNo || null, PaymentType: result.PaymentType || null }
       },

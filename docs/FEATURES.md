@@ -7,7 +7,8 @@
 | 用戶認證（Auth） | 完成 | 註冊、登入、JWT 發放、個人資料 |
 | 商品列表（Products） | 完成 | 公開分頁列表、商品詳情 |
 | 購物車（Cart） | 完成 | 雙模式認證（訪客/登入）、數量累加、庫存檢查 |
-| 訂單（Orders） | 完成 | 從購物車建立、扣庫存 transaction |
+| Shipping 配送費用 | 完成 | 宅配／超商、滿額免基本運費、偏遠與急件附加費 |
+| 訂單（Orders） | 完成 | 從購物車建立、運費與金額快照、扣庫存 transaction |
 | 綠界 ECPay 金流 | 完成 | AIO 信用卡付款（跳轉）、瀏覽器導回、`QueryTradeInfo` 主動查詢、使用者手動確認付款狀態 |
 | 後台商品管理（Admin Products） | 完成 | CRUD、刪除前檢查未完成訂單 |
 | 後台訂單管理（Admin Orders） | 完成 | 列表（含狀態篩選）、詳情 |
@@ -216,13 +217,28 @@
 
 ### POST /api/orders — 建立訂單
 
-**請求 body（必填）**：
+**請求 body**（前三項必填；配送欄位選填）：
 
 | 欄位 | 型別 | 規則 |
 |------|------|------|
 | recipientName | string | 非空 |
 | recipientEmail | string | 合法 email 格式 |
 | recipientAddress | string | 非空 |
+| shippingMethod | string | 選填；`home_delivery`（預設）或 `convenience_store` |
+| isRemoteArea | boolean | 選填，預設 `false`；偏遠地區加收費 |
+| isSameDayDelivery | boolean | 選填，預設 `false`；當日急件加收費 |
+
+**Shipping 規則**（`src/utils/shipping.js`）：
+
+| 條件 | 金額處理 |
+|------|----------|
+| 宅配 | 基本運費 120 元 |
+| 超商取貨 | 取貨費 60 元，不屬於基本運費 |
+| 商品小計 ≥ 1,500 元 | 免除宅配基本運費；不免超商取貨費 |
+| 偏遠地區 | 加收 200 元 |
+| 當日急件 | 加收 250 元 |
+
+偏遠與急件可同時累加；滿額僅免宅配基本運費，成立的附加費仍計入 `shipping_fee`。
 
 **業務邏輯（Transaction）**：
 
@@ -231,15 +247,16 @@
 1. 讀取當前用戶的購物車（`user_id` 比對，不含 session_id 購物車）
 2. 若購物車為空，回 400 `CART_EMPTY`
 3. 逐項確認庫存，任一不足則回 400 `STOCK_INSUFFICIENT`（列出不足商品名稱）
-4. 計算總金額（Σ price × quantity，以下單當時商品價格為準）
-5. 以 `ecpayService.generateMerchantTradeNo()` 產生綠界交易編號（`EC` + Unix 秒 + 6 位 hex，共 18 字元）
-6. **Transaction 內**：
-   - INSERT orders（含訂單號 `ORD-YYYYMMDD-XXXXX` 與 `merchant_trade_no`）
+4. 計算商品小計 `subtotal`（Σ price × quantity，以下單當時商品價格為準）
+5. 呼叫 `calculateShipping` 計算 `shipping_fee` 與 `total_amount = subtotal + shipping_fee`
+6. 以 `ecpayService.generateMerchantTradeNo()` 產生綠界交易編號（`EC` + Unix 秒 + 6 位 hex，共 18 字元）
+7. **Transaction 內**：
+   - INSERT orders（含配送條件、金額快照、訂單號與 `merchant_trade_no`）
    - INSERT order_items（每項商品的名稱、價格、數量**快照**，product_id 保留但無 FK）
    - UPDATE products SET stock = stock - quantity（每個商品）
    - DELETE FROM cart_items WHERE user_id = ?（清空購物車）
 
-**成功回應（201）**：回傳訂單 id、order_no、merchant_trade_no、total_amount、status、items、created_at
+**成功回應（201）**：回傳訂單 id、order_no、merchant_trade_no、subtotal、shipping_fee、shipping_method、is_remote_area、is_same_day_delivery、total_amount、status、items、created_at。`total_amount` 是 ECPay 實際付款金額。
 
 ---
 
@@ -247,7 +264,7 @@
 
 - 只回傳當前 JWT 用戶的訂單
 - 依 `created_at DESC` 排序
-- 回傳：id, order_no, total_amount, status, created_at（不含明細）
+- 回傳：id、order_no、配送與金額快照、status、created_at（不含商品明細）
 
 ---
 
