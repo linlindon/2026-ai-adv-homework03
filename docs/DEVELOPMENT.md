@@ -15,8 +15,9 @@
 | `ECPAY_HASH_IV` | 綠界 HashIV（CheckMacValue 計算用） | 否 | 官方測試值 |
 | `ECPAY_ENV` | 綠界環境；`production` → `payment.ecpay.com.tw`，其餘 → `payment-stage.ecpay.com.tw` | 否 | `staging` |
 | `NODE_ENV` | 執行環境，影響 bcrypt salt rounds | 否 | — |
+| `DATABASE_PATH` | 覆寫 SQLite 路徑；Integration Test 使用 `:memory:` | 否 | `<專案根目錄>/database.sqlite` |
 
-> `NODE_ENV=test` 時 bcrypt salt rounds 降為 1 以加速測試。測試環境需確認 `.env` 中的 `JWT_SECRET` 有效。
+> `NODE_ENV=test` 時 bcrypt salt rounds 降為 1 以加速測試。Integration 設定會提供專用 `JWT_SECRET` 並在載入 app 前指定 `DATABASE_PATH=:memory:`，不得移除這項隔離。
 
 ---
 

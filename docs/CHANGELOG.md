@@ -4,6 +4,10 @@
 
 ### Added
 
+- 完整測試流程：`test:unit`、`test:integration`、`test:e2e` 與 `postman`
+- 使用 Vitest + Supertest 的訂單 Integration Test，驗證 API、資料表、運費、總額、庫存、購物車清空及 transaction rollback
+- Playwright 綠界 WebATM（台灣土地銀行）E2E 規格，付款成功後驗證 UI 與 API `paid` 狀態並保存截圖
+- OpenAPI 轉 Postman Collection 產生器，提供 `baseUrl`、`token`、`sessionId` 與登入後 JWT 自動保存
 - Shipping 配送費用純函式模組 `src/utils/shipping.js`
   - 宅配基本運費 120 元、商品小計滿 1,500 元免基本運費
   - 超商取貨 60 元（不適用滿額免基本運費）
@@ -21,6 +25,7 @@
 
 ### Changed
 
+- `src/database.js` 支援 `DATABASE_PATH`；Integration Test 固定使用 `:memory:`，不再接觸正式 `database.sqlite`
 - `POST /api/orders` 接受配送選項，由 Shipping 模組計算並回傳 `subtotal`、`shipping_fee` 與含運費的 `total_amount`
 - `orders` 表新增配送選項及金額快照欄位，啟動時自動 migration 既有資料庫
 - 購物車、結帳、訂單詳情及後台訂單詳情頁顯示一致的配送費用資訊

@@ -1,7 +1,7 @@
 const {
   SHIPPING_METHODS,
   calculateShipping,
-} = require('../src/utils/shipping');
+} = require('../../src/utils/shipping');
 
 describe('Shipping module', () => {
   it('charges NT$120 for basic home delivery', () => {

@@ -28,7 +28,7 @@
 | 密碼雜湊 | bcrypt（10 rounds） |
 | UUID 生成 | uuid v4 |
 | API 文件 | swagger-jsdoc（OpenAPI 3.0.3） |
-| 測試框架 | Vitest + Supertest |
+| 測試框架 | Vitest + Supertest + Playwright |
 
 ## 快速開始
 
@@ -66,7 +66,11 @@ npm run dev:css         # 終端機 2
 | `npm run dev:css` | 監聽 CSS 變更並自動編譯 |
 | `npm run css:build` | 一次性編譯並壓縮 CSS |
 | `npm test` | 執行所有測試 |
+| `npm run test:unit` | 執行 Shipping Unit Test |
+| `npm run test:integration` | 以記憶體 SQLite 執行 API／DB Integration Test |
+| `npm run test:e2e` | 對已啟動的 `localhost:3001` 執行綠界付款 E2E |
 | `npm run openapi` | 輸出 OpenAPI JSON 文件 |
+| `npm run postman` | 更新 OpenAPI 並產生 Postman Collection |
 
 ## 文件索引
 

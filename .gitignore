@@ -1,11 +1,10 @@
 # Dependencies
-node_modules/
+/node_modules/
 
-# Build output
-backend-project/public/css/output.css
+# Generated build output
+/public/css/output.css
 
-
-# SQLite database files
+# Runtime SQLite database files
 *.db
 *.sqlite
 *.sqlite3
@@ -29,15 +28,21 @@ Thumbs.db
 *.log
 npm-debug.log*
 
-# Test coverage
-coverage/
+# Test-generated artifacts
+/coverage/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/.playwright-mcp/
+/postman/
+/docs/e2e-evidence/*.png
 
 # Temp files
 *.tmp
 *.swp
 
-# Playwright MCP debug artifacts (snapshots/screenshots/logs)
-.playwright-mcp/
-
-.claude/*.local.json
-public/css/output.css
+# Local agent configuration
+/.claude/*.local.json
+/.codex/config.toml
+/AGENTS.md

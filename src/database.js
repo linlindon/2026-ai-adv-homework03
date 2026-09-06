@@ -3,7 +3,12 @@ const path = require('path');
 const bcrypt = require('bcrypt');
 const { v4: uuidv4 } = require('uuid');
 
-const dbPath = path.join(__dirname, '..', 'database.sqlite');
+const configuredDbPath = process.env.DATABASE_PATH;
+const dbPath = configuredDbPath === ':memory:'
+  ? ':memory:'
+  : configuredDbPath
+    ? path.resolve(configuredDbPath)
+    : path.join(__dirname, '..', 'database.sqlite');
 const db = new Database(dbPath);
 
 // Enable WAL mode for better performance

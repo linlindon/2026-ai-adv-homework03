@@ -9,13 +9,23 @@ describe('Admin Orders API', () => {
 
     // Create an order: register user -> add to cart -> place order
     const { token } = await registerUser();
-    const prodRes = await request(app).get('/api/products');
-    const productId = prodRes.body.data.products[0].id;
+    const prodRes = await request(app)
+      .post('/api/admin/products')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        name: '後台訂單測試花束',
+        description: 'Admin Orders 測試專用商品',
+        price: 800,
+        stock: 10,
+      });
+    expect(prodRes.status).toBe(201);
+    const productId = prodRes.body.data.id;
 
-    await request(app)
+    const cartRes = await request(app)
       .post('/api/cart')
       .set('Authorization', `Bearer ${token}`)
       .send({ productId, quantity: 1 });
+    expect(cartRes.status).toBe(200);
 
     const orderRes = await request(app)
       .post('/api/orders')
@@ -27,6 +37,7 @@ describe('Admin Orders API', () => {
         shippingMethod: 'convenience_store',
       });
 
+    expect(orderRes.status).toBe(201);
     orderId = orderRes.body.data.id;
   });
 

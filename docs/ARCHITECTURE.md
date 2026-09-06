@@ -7,7 +7,7 @@
 - Express 同時負責 **SSR 頁面渲染**（EJS 模板）與 **REST API**
 - 前端頁面（`/`、`/products/:id` 等）由 Server 渲染 HTML 骨架後回傳，頁面邏輯透過 `public/js/pages/*.js` 在瀏覽器端呼叫 API
 - API 路由前綴統一為 `/api`，可與頁面路由明確區分
-- 資料庫使用單一 SQLite 檔案（`database.sqlite`），以 WAL 模式執行
+- 正式環境使用 SQLite 檔案（`database.sqlite`），以 WAL 模式執行；Integration Test 以 `DATABASE_PATH=:memory:` 隔離資料
 
 ```
 瀏覽器 → Express Server
@@ -90,7 +90,14 @@
 │           └── admin-orders.js  # 後台：訂單篩選與查看
 ├── tests/
 │   ├── setup.js                 # 測試共用工具（getAdminToken、registerUser）
-│   ├── shipping.test.js         # Shipping 純函式 unit tests
+│   ├── sequencer.mjs            # Vitest 固定檔案執行順序
+│   ├── unit/
+│   │   └── shipping.test.js     # Shipping 純函式 unit tests
+│   ├── integration/
+│   │   ├── env.setup.js         # 強制使用記憶體 SQLite
+│   │   └── order-flow.test.js   # 訂單、DB、庫存與 rollback 完整驗證
+│   ├── e2e/
+│   │   └── ecpay-payment.spec.js# Playwright 綠界 WebATM E2E
 │   ├── auth.test.js
 │   ├── products.test.js
 │   ├── cart.test.js
@@ -99,6 +106,10 @@
 │   └── adminOrders.test.js
 ├── swagger-config.js            # OpenAPI 3.0.3 設定（security schemes）
 ├── generate-openapi.js          # 輸出 openapi.json 的腳本
+├── scripts/generate-postman.js  # OpenAPI → Postman Collection
+├── playwright.config.js         # E2E 設定（不自動啟動 server）
+├── vitest.unit.config.js        # Unit Test 設定
+├── vitest.integration.config.js # Integration Test 與記憶體 DB 設定
 ├── vitest.config.js             # 測試設定（固定執行順序）
 ├── database.sqlite              # SQLite 資料庫主檔
 ├── database.sqlite-shm          # WAL 模式共享記憶體檔
@@ -216,7 +227,7 @@ SQL 查詢依此動態拼接 `WHERE` 條件，確保用戶只能操作自己的�
 
 ## 資料庫 Schema
 
-資料庫路徑：`<專案根目錄>/database.sqlite`  
+正式資料庫路徑：`<專案根目錄>/database.sqlite`；設定 `DATABASE_PATH` 時改用指定路徑，Integration Test 固定使用 `:memory:`。
 設定：WAL 模式（`PRAGMA journal_mode = WAL`）、外鍵約束啟用（`PRAGMA foreign_keys = ON`）
 
 ### users

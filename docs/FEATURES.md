@@ -14,6 +14,7 @@
 | 後台訂單管理（Admin Orders） | 完成 | 列表（含狀態篩選）、詳情 |
 | 前台 SSR 頁面 | 完成 | EJS 渲染，JS 另行呼叫 API |
 | OpenAPI 文件 | 完成 | swagger-jsdoc 從 JSDoc 生成 |
+| 自動化測試流程 | 完成 | Unit、記憶體 SQLite Integration、Playwright E2E、Postman Collection |
 
 ---
 
